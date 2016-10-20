@@ -11,13 +11,21 @@ function extractActivityData(domContent) {
     var startDate = extractStartDate(domContent);
     var calories = extractCalories(domContent);
     var avgHR = extractAvgHR(domContent);
+    var distUnit = extractDistUnit(domContent);
+    var HRValues = extractHRValues(domContent);
+
     console.log('Activity Name: ' +activityName);
     console.log('Duration: ' +duration);
     console.log('Distance: ' +distance);
+    console.log('Distance Unit: ' +distUnit);
     console.log('Start Time: ' +startTime);
     console.log('Start Date: ' +startDate);
     console.log('Calories: ' +calories);
     console.log('Average HR: ' +avgHR);
+    for(var i=0; i<HRValues.length; ++i){
+	console.log('HR Datapoint: ' + HRValues[i][0] + "@" + HRValues[i][1]);
+    }
+
 }
 
 function extractActivityName(domContent) {
@@ -63,9 +71,32 @@ function extractAvgHR(domContent) {
 }
 
 function extractDistUnit(domContent) {
-    var durationRegex = /,"duration":(\d+),/;
-    var duration = durationRegex.exec(domContent);
-    return duration[1];
+    var distUnitRegex = /,"distanceUnit":"(\w+)",/;
+    var distUnit = distUnitRegex.exec(domContent);
+    return distUnit[1];
+}
+
+function extractHRValues(domContent) {
+    var HRSeriesRegex = /dataType: 'heart-rate',[\d,\s,\w,:,']+\[([\d,\s,\w,:,',{,},"]+)]/;
+    var HRSeries = HRSeriesRegex.exec(domContent);
+    var HRValueRegex = /\{"duration":\d+,"value":(\d+)\}/g;
+    var HRDurationRegex = /\{"duration":(\d+),"value":\d+\}/g;
+    var ret = [];
+    var i = 0;
+    do {
+        var HRValues = HRValueRegex.exec(HRSeries[1]);
+        var HRDurations = HRDurationRegex.exec(HRSeries[1]);
+        if(HRValues) {
+            ret[i++] = [HRValues[1],HRDurations[1]];
+        }
+    } while(HRValues);
+    return ret;
+}
+
+function extractHRDurations(domContent) {
+    var HRDurationRegex = /\{"duration":(\d+),"value":\d+\}/g;
+    var HRDurations = HRDurationRegex.exec(domContent);
+    return HRDurations;
 }
 
 // When the browser-action button is clicked...
