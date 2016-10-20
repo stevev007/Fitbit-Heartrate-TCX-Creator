@@ -5,6 +5,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         // Call the specified callback, passing
         // the web-page's DOM content as argument
         //sendResponse(document.all[0].outerHTML);
-        sendResponse(document.getElementById("scripts").outerHTML);
+        sendResponse(document.documentElement.outerHTML);
     }
 });
