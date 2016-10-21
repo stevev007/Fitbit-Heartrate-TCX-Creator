@@ -15,6 +15,10 @@ function createTCX(domContent){
     var avgHR = extractAvgHR(scriptText);
     var distUnit = extractDistUnit(scriptText);
     var HRValues = extractHRValues(scriptText);
+    var maxHR = null;
+    for(var i=0; i<HRValues.length; ++i){
+	if(maxHR==null || Number(HRValues[i][0])>Number(maxHR)) maxHR = HRValues[i][0];
+    }
 
     console.log('Activity Name: ' +activityName);
     console.log('Duration: ' +duration);
@@ -25,18 +29,34 @@ function createTCX(domContent){
     console.log('Start Date: ' +startDate);
     console.log('Calories: ' +calories);
     console.log('Average HR: ' +avgHR);
-    for(var i=0; i<HRValues.length; ++i){
-	//console.log('HR Datapoint: ' + HRValues[i][0] + "@" + HRValues[i][1]);
-    }
+
 
     var xmlDoc = document.implementation.createDocument("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", "TrainingCenterDatabase");
     var activitiesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Activities');
     var activityTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Activity');
     var idTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Id');
-    var dateTimeAndOffsetText = document.createTextNode(extractStartDateTimeAndOffset(domContent));
+    var dateTimeAndOffset = extractStartDateTimeAndOffset(domContent);
+    var dateTimeAndOffsetText = document.createTextNode(dateTimeAndOffset);
     idTag.appendChild(dateTimeAndOffsetText);
-    activityTag.setAttribute('Sport', activityName );
     activityTag.appendChild(idTag);
+
+    var lapTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Lap');
+    lapTag.setAttribute('StartTime', dateTimeAndOffset);
+    activityTag.appendChild(lapTag);
+
+    var caloriesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Calories');
+    caloriesTag.appendChild(document.createTextNode(extractCalories(scriptText)));
+    lapTag.appendChild(caloriesTag);
+
+    var avgHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'AverageHeartRateBpm');
+    avgHRTag.appendChild(document.createTextNode(extractAvgHR(scriptText)));
+    lapTag.appendChild(avgHRTag);
+
+    var maxHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'MaximumHeartRateBpm');
+    maxHRTag.appendChild(document.createTextNode(maxHR));
+    if(maxHR) lapTag.appendChild(maxHRTag);
+
+    activityTag.setAttribute('Sport', activityName );
     activitiesTag.appendChild(activityTag);
     xmlDoc.documentElement.appendChild(activitiesTag);
     console.log(xmlDoc);
