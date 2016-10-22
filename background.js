@@ -16,9 +16,6 @@ function createTCX(domContent){
     var distUnit = extractDistUnit(scriptText);
     var HRValues = extractHRValues(scriptText);
     var maxHR = null;
-    for(var i=0; i<HRValues.length; ++i){
-	if(maxHR==null || Number(HRValues[i][0])>Number(maxHR)) maxHR = HRValues[i][0];
-    }
 
     console.log('Activity Name: ' +activityName);
     console.log('Duration: ' +duration);
@@ -32,6 +29,7 @@ function createTCX(domContent){
 
 
     var xmlDoc = document.implementation.createDocument("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", "TrainingCenterDatabase");
+    xmlDoc.documentElement.setAttribute('xmlns', "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
     var activitiesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Activities');
     var activityTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Activity');
     var idTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Id');
@@ -52,9 +50,56 @@ function createTCX(domContent){
     avgHRTag.appendChild(document.createTextNode(extractAvgHR(scriptText)));
     lapTag.appendChild(avgHRTag);
 
+    var intensityTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Intensity');
+    intensityTag.appendChild(document.createTextNode("Active"));
+    lapTag.appendChild(intensityTag);
+
+    var triggerMethodTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'TriggerMethod');
+    triggerMethodTag.appendChild(document.createTextNode("Manual"));
+    lapTag.appendChild(triggerMethodTag);
+
+    var trackTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Track');
+    lapTag.appendChild(trackTag);
+
+    for(var i=0; i<HRValues.length; ++i){
+	if(maxHR==null || Number(HRValues[i][0])>Number(maxHR)) maxHR = HRValues[i][0];
+        var trackPointTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Trackpoint');
+        trackTag.appendChild(trackPointTag);
+
+        //TODO:put times in full date, time, and offset format instead of milliseconds ellapsed in activity
+        var trackPointTimeTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Time');
+        trackPointTimeTag.appendChild(document.createTextNode(HRValues[i][1]));
+        trackPointTag.appendChild(trackPointTimeTag);
+
+        var trackPointHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'HeartRateBpm');
+        trackPointTag.appendChild(trackPointHRTag);
+
+        var trackPointHRValueTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Value');
+        trackPointHRValueTag.appendChild(document.createTextNode(HRValues[i][0]));
+        trackPointHRTag.appendChild(trackPointHRValueTag);
+    }
+
     var maxHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'MaximumHeartRateBpm');
     maxHRTag.appendChild(document.createTextNode(maxHR));
     if(maxHR) lapTag.appendChild(maxHRTag);
+
+    var creatorTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Creator');
+    creatorTag.setAttribute('xsi:type', "Device_t");
+    creatorTag.setAttribute('xmlns:xsi', "http://www.w3.org/2001/XMLSchema-instance");
+    activityTag.appendChild(creatorTag);
+
+    var creatorNameTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Name');
+    creatorNameTag.appendChild(document.createTextNode("Fitbit Heartrate TCX Creator"));
+    creatorTag.appendChild(creatorNameTag);
+
+    var creatorUnitIdTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'UnitId');
+    creatorUnitIdTag.appendChild(document.createTextNode("0"));
+    creatorTag.appendChild(creatorUnitIdTag);
+
+    var creatorProductIdTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'ProductId');
+    creatorProductIdTag.appendChild(document.createTextNode("0"));
+    creatorTag.appendChild(creatorProductIdTag);
+
 
     activityTag.setAttribute('Sport', activityName );
     activitiesTag.appendChild(activityTag);
