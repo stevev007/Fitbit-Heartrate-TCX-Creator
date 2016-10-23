@@ -42,6 +42,14 @@ function createTCX(domContent){
     lapTag.setAttribute('StartTime', dateTimeAndOffset);
     activityTag.appendChild(lapTag);
 
+    var totalTimeSecondsTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'TotalTimeSeconds');
+    totalTimeSecondsTag.appendChild(document.createTextNode(duration/1000));
+    lapTag.appendChild(totalTimeSecondsTag);
+
+    var distanceMetersTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'DistanceMeters');
+    distanceMetersTag.appendChild(document.createTextNode(distance*1609.34));
+    lapTag.appendChild(distanceMetersTag);
+
     var caloriesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Calories');
     caloriesTag.appendChild(document.createTextNode(extractCalories(scriptText)));
     lapTag.appendChild(caloriesTag);
