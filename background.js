@@ -105,6 +105,8 @@ function createTCX(domContent){
     activitiesTag.appendChild(activityTag);
     xmlDoc.documentElement.appendChild(activitiesTag);
     console.log(xmlDoc);
+    var xmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" + (new XMLSerializer()).serializeToString(xmlDoc);
+    download(dateTimeAndOffset + "_" + activityName + ".tcx", xmlText);
 }
 
 function getScriptText(domContent){
@@ -249,3 +251,18 @@ function httpGetAsync(theUrl, callback)
     xmlHttp.open("GET", theUrl, true); // true for asynchronous 
     xmlHttp.send(null);
 };
+
+function download(filename, text) {
+    var pom = document.createElement('a');
+    pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    pom.setAttribute('download', filename);
+
+    if (document.createEvent) {
+        var event = document.createEvent('MouseEvents');
+        event.initEvent('click', true, true);
+        pom.dispatchEvent(event);
+    }
+    else {
+        pom.click();
+    }
+}
