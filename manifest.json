@@ -18,5 +18,8 @@
     "default_title": "Fitbit Heartrate TCX Creator"
   },
 
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab",
+    "tabs",
+    "*://*.fitbit.com/*"
+  ]
 }

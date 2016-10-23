@@ -18,14 +18,14 @@ function createTCX(domContent){
     var maxHR = null;
 
     console.log('Activity Name: ' +activityName);
-    console.log('Duration: ' +duration);
-    console.log('Distance: ' +distance);
-    console.log('Distance Unit: ' +distUnit);
-    console.log('Start Time: ' +startTime);
-    console.log('Timezone Offset: ' + timeZoneOffset );
-    console.log('Start Date: ' +startDate);
-    console.log('Calories: ' +calories);
-    console.log('Average HR: ' +avgHR);
+    //console.log('Duration: ' +duration);
+    //console.log('Distance: ' +distance);
+    //console.log('Distance Unit: ' +distUnit);
+    //console.log('Start Time: ' +startTime);
+    //console.log('Timezone Offset: ' + timeZoneOffset );
+    //console.log('Start Date: ' +startDate);
+    //console.log('Calories: ' +calories);
+    //console.log('Average HR: ' +avgHR);
 
 
     var xmlDoc = document.implementation.createDocument("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", "TrainingCenterDatabase");
@@ -162,14 +162,14 @@ function extractStartDateTimeAndOffset(domContent){
     ret = startDateTimeRegex.exec(domContent);
     var timeZoneOffset = extractTimeZoneOffsetToUTC(domContent);
     if(ret) {
-        if(timeZoneOffset[0]!="-") return ret[1] + "+"+timeZoneOffset;
+        if(timeZoneOffset.charAt(0)!="-") return ret[1] + "+"+timeZoneOffset;
         else return ret[1] + timeZoneOffset;
     }
 
     //finally if all else fails create from startDate, startTime, timeZone
     ret = extractStartDate(domContent) + "T" + extractStartTime(domContent)+ ":00.000";
     if(ret) {
-        if(timeZoneOffset[0]!="-") return ret[1] + "+"+timeZoneOffset;
+        if(timeZoneOffset.charAt(0)!="-") return ret[1] + "+"+timeZoneOffset;
         else return ret[1] + timeZoneOffset;
     }
 
@@ -200,10 +200,12 @@ function extractDistUnit(domContent) {
 function extractTimeZoneOffsetToUTC(domContent) {
     var timezoneRegex = /"timezone":"([\w/]+)"/;
     var timezone = timezoneRegex.exec(domContent);
-    if(timezone) {
-        return "-04:00";
+    if(timezone){
+        if(timezone[1]=="America/New_York") {
+            return "-04:00";
+        }
     }
-    else return null;
+    else return "+00:00";
 }
 
 function extractHRValues(domContent) {
@@ -232,5 +234,18 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     if (urlRegex.test(tab.url)) {
         // ...if it matches, send a message specifying a callback too
         chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, createTCX);
+        //httpGetAsync(tab.url, createTCX); //for when We create a webpage instead of the chrome extension to do this
     }
 });
+
+
+function httpGetAsync(theUrl, callback)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() { 
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+    xmlHttp.send(null);
+};
