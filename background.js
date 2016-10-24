@@ -25,11 +25,13 @@ function createTCX(domContent){
     activityTag.appendChild(lapTag);
 
     var totalTimeSecondsTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'TotalTimeSeconds');
-    totalTimeSecondsTag.appendChild(document.createTextNode(extractDuration(scriptText)/1000));
+    var totalTimeSeconds = extractDuration(scriptText)/1000;
+    totalTimeSecondsTag.appendChild(document.createTextNode(totalTimeSeconds));
     lapTag.appendChild(totalTimeSecondsTag);
 
     var distanceMetersTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'DistanceMeters');
-    distanceMetersTag.appendChild(document.createTextNode(extractDistance(scriptText)*1609.34));
+    var totalDistMeters = extractDistance(scriptText)*1609.34;
+    distanceMetersTag.appendChild(document.createTextNode(totalDistMeters));
     lapTag.appendChild(distanceMetersTag);
 
     var caloriesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Calories');
@@ -53,6 +55,7 @@ function createTCX(domContent){
 
     var maxHR = null;
     var HRValues = extractHRValues(scriptText);
+    var accumulatedMeters = 0;
     for(var i=0; i<HRValues.length; ++i){
 	if(maxHR==null || Number(HRValues[i][0])>Number(maxHR)) maxHR = HRValues[i][0];
         var trackPointTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Trackpoint');
@@ -64,6 +67,14 @@ function createTCX(domContent){
         trackPointDate.setSeconds(trackPointDate.getSeconds()+(HRValues[i][1]/1000));
         trackPointTimeTag.appendChild(document.createTextNode(formatDate(trackPointDate)));
         trackPointTag.appendChild(trackPointTimeTag);
+
+        var trackPointDistanceMetersTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'DistanceMeters');
+        var percentOfTotalActivity = 0;
+        if(i>0) percentOfTotalActivity = ((HRValues[i][1]-HRValues[i-1][1])/1000)/totalTimeSeconds;
+        var timeAmortizedDistMeters = totalDistMeters * percentOfTotalActivity;
+        accumulatedMeters += timeAmortizedDistMeters;
+        trackPointDistanceMetersTag.appendChild(document.createTextNode(accumulatedMeters));
+        trackPointTag.appendChild(trackPointDistanceMetersTag);
 
         var trackPointHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'HeartRateBpm');
         trackPointTag.appendChild(trackPointHRTag);
