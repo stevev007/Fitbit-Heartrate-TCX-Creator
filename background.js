@@ -6,27 +6,8 @@ var urlRegex = /^https?:\/\/(?:[^./?#]+\.)?fitbit\.com\/activities\/exercise\/\d
 function createTCX(domContent){
     var scriptText = getScriptText(domContent);
     var activityName = extractActivityName(scriptText);
-    var duration = extractDuration(scriptText);
-    var distance = extractDistance(scriptText);
-    var startTime = extractStartTime(scriptText);
-    var timeZoneOffset = extractTimeZoneOffsetToUTC(domContent);
-    var startDate = extractStartDate(scriptText);
-    var calories = extractCalories(scriptText);
-    var avgHR = extractAvgHR(scriptText);
-    var distUnit = extractDistUnit(scriptText);
-    var HRValues = extractHRValues(scriptText);
-    var maxHR = null;
 
     console.log('Activity Name: ' +activityName);
-    //console.log('Duration: ' +duration);
-    //console.log('Distance: ' +distance);
-    //console.log('Distance Unit: ' +distUnit);
-    //console.log('Start Time: ' +startTime);
-    //console.log('Timezone Offset: ' + timeZoneOffset );
-    //console.log('Start Date: ' +startDate);
-    //console.log('Calories: ' +calories);
-    //console.log('Average HR: ' +avgHR);
-
 
     var xmlDoc = document.implementation.createDocument("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", "TrainingCenterDatabase");
     xmlDoc.documentElement.setAttribute('xmlns', "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2");
@@ -35,6 +16,7 @@ function createTCX(domContent){
     var idTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Id');
     var dateTimeAndOffset = extractStartDateTimeAndOffset(domContent);
     var dateTimeAndOffsetText = document.createTextNode(dateTimeAndOffset);
+    var startDateObj = new Date(dateTimeAndOffset);
     idTag.appendChild(dateTimeAndOffsetText);
     activityTag.appendChild(idTag);
 
@@ -43,11 +25,11 @@ function createTCX(domContent){
     activityTag.appendChild(lapTag);
 
     var totalTimeSecondsTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'TotalTimeSeconds');
-    totalTimeSecondsTag.appendChild(document.createTextNode(duration/1000));
+    totalTimeSecondsTag.appendChild(document.createTextNode(extractDuration(scriptText)/1000));
     lapTag.appendChild(totalTimeSecondsTag);
 
     var distanceMetersTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'DistanceMeters');
-    distanceMetersTag.appendChild(document.createTextNode(distance*1609.34));
+    distanceMetersTag.appendChild(document.createTextNode(extractDistance(scriptText)*1609.34));
     lapTag.appendChild(distanceMetersTag);
 
     var caloriesTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Calories');
@@ -69,14 +51,18 @@ function createTCX(domContent){
     var trackTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Track');
     lapTag.appendChild(trackTag);
 
+    var maxHR = null;
+    var HRValues = extractHRValues(scriptText);
     for(var i=0; i<HRValues.length; ++i){
 	if(maxHR==null || Number(HRValues[i][0])>Number(maxHR)) maxHR = HRValues[i][0];
         var trackPointTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Trackpoint');
         trackTag.appendChild(trackPointTag);
 
-        //TODO:put times in full date, time, and offset format instead of milliseconds ellapsed in activity
+        //put times in full date, time, and offset format instead of milliseconds ellapsed in activity
         var trackPointTimeTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'Time');
-        trackPointTimeTag.appendChild(document.createTextNode(HRValues[i][1]));
+        var trackPointDate = new Date(startDateObj.getTime());
+        trackPointDate.setSeconds(trackPointDate.getSeconds()+(HRValues[i][1]/1000));
+        trackPointTimeTag.appendChild(document.createTextNode(formatDate(trackPointDate)));
         trackPointTag.appendChild(trackPointTimeTag);
 
         var trackPointHRTag = document.createElementNS("http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2", 'HeartRateBpm');
@@ -115,6 +101,28 @@ function createTCX(domContent){
     console.log(xmlDoc);
     var xmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" + (new XMLSerializer()).serializeToString(xmlDoc);
     download(dateTimeAndOffset + "_" + activityName + ".tcx", xmlText);
+}
+
+function formatDate(dateToFormat) {
+    //var tzOffset = dateToFormat.getTimezoneOffset()/60;
+    var tzOffset = dateToFormat.getTimezoneOffset();
+    var tzSign = "+";
+    pad = function(num) {
+            var norm = Math.abs(Math.floor(num));
+            return (norm < 10 ? '0' : '') + norm;
+        };  
+    if(tzOffset>0)
+        tzSign = "-";
+
+    return dateToFormat.getFullYear() 
+        + "-" + pad(dateToFormat.getMonth() + 1) //Months are zero based
+        + "-" + pad(dateToFormat.getDate())
+        + "T" + pad(dateToFormat.getHours()) 
+        + ":" + pad(dateToFormat.getMinutes()) 
+        + ":" + pad(dateToFormat.getSeconds()) 
+        + ".000" 
+        + tzSign + pad(-tzOffset/60)
+        + ":" + pad(tzOffset%60);
 }
 
 function getScriptText(domContent){
