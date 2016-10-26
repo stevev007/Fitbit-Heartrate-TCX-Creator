@@ -3,14 +3,16 @@
 
   "name": "Fitbit Heartrate TCX Creator",
   "description": "This extension grabs Fitbit heartrate data from the current activity page and creates a TCX file",
-  "version": "1.0",
+  "version": "1.1",
   "icons": { "48": "icon48.png",
              "128": "icon128.png" 
   },
 
   "background": {
     "persistent": false,
-    "scripts": ["background.js"]
+    "scripts": ["lib/moment.js",
+                "lib/moment-timezone-with-data.js",
+                "background.js"]
   },
   "content_scripts": [{
     "matches": ["*://*.fitbit.com/*"],

@@ -189,17 +189,16 @@ function extractStartDateTimeAndOffset(domContent){
     //ex. <h2 class="component date">...<time datetime="2016-10-19T12:10:30.000">...</h2>
     var startDateTimeRegex = /<time datetime="(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)"/;
     ret = startDateTimeRegex.exec(domContent);
-    var timeZoneOffset = extractTimeZoneOffsetToUTC(domContent);
     if(ret) {
-        if(timeZoneOffset.charAt(0)!="-") return ret[1] + "+"+timeZoneOffset;
-        else return ret[1] + timeZoneOffset;
+        var dateTimeAndOffset = addTimeZoneOffsetToDate(domContent, ret[1]);
+        return dateTimeAndOffset;
     }
 
     //finally if all else fails create from startDate, startTime, timeZone
     ret = extractStartDate(domContent) + "T" + extractStartTime(domContent)+ ":00.000";
     if(ret) {
-        if(timeZoneOffset.charAt(0)!="-") return ret[1] + "+"+timeZoneOffset;
-        else return ret[1] + timeZoneOffset;
+        var dateTimeAndOffset = addTimeZoneOffsetToDate(domContent, ret[1]);
+        return dateTimeAndOffset;
     }
 
     return null;
@@ -226,15 +225,24 @@ function extractDistUnit(domContent) {
     else return null;
 }
 
-function extractTimeZoneOffsetToUTC(domContent) {
+function addTimeZoneOffsetToDate(domContent, atDateTime) {
     var timezoneRegex = /"timezone":"([\w/]+)"/;
     var timezone = timezoneRegex.exec(domContent);
+
     if(timezone){
-        if(timezone[1]=="America/New_York") {
-            return "-04:00";
+        var dateTimeAndOffset = moment.tz(atDateTime, timezone[1]).format();
+        var dateTimeMillisAndOffset;
+
+	if(atDateTime.charAt(19)=='.'){
+            //add millis
+            dateTimeMillisAndOffset = dateTimeAndOffset.slice(0,19) + ".000" + dateTimeAndOffset.slice(19);
+        }else{
+            dateTimeMillisAndOffset = dateTimeAndOffset;
         }
+        console.log("returning: " + dateTimeMillisAndOffset);
+        return dateTimeMillisAndOffset;
     }
-    else return "+00:00";
+    else return atDateTime + "+00:00";
 }
 
 function extractHRValues(domContent) {
