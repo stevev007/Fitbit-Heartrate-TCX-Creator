@@ -6,5 +6,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         // the web-page's DOM content as argument
         //sendResponse(document.all[0].outerHTML);
         sendResponse(document.documentElement.outerHTML);
+    }else if (msg.text === 'download_fitbit_tcx') {
+        document.getElementsByClassName("export")[0].click();
     }
 });

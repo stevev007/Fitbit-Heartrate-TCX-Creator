@@ -1,10 +1,14 @@
 // Regex-pattern to check URLs against. 
 // It matches URLs like: http[s]://[...]fitbit.com[...]/activities/exercise/12873903
 var urlRegex = /^https?:\/\/(?:[^./?#]+\.)?fitbit\.com\/activities\/exercise\/\d+/;
+var myTab = null;
 
 // A function to use as callback
 function createTCX(domContent){
-    var scriptText = getScriptText(domContent);
+  var scriptText = getScriptText(domContent);
+  if(isGPSActivity(scriptText)) { //just use fitbit export
+    chrome.tabs.sendMessage(myTab.id, {text: 'download_fitbit_tcx'}, null);
+  } else { //run our export for non GPS activities
     var activityName = extractActivityName(scriptText);
 
     console.log('Activity Name: ' +activityName);
@@ -112,6 +116,15 @@ function createTCX(domContent){
     console.log(xmlDoc);
     var xmlText = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" + (new XMLSerializer()).serializeToString(xmlDoc);
     download(dateTimeAndOffset + "_" + activityName + ".tcx", xmlText);
+  }
+}
+
+function isGPSActivity(scriptContent){
+    var GPSRegex = /trackpoints: \[/;
+    var GPSActivity = GPSRegex.exec(scriptContent);
+    if(GPSActivity) return true;
+    return false;
+
 }
 
 function formatDate(dateToFormat) {
@@ -267,11 +280,11 @@ function extractHRValues(domContent) {
 
 // When the browser-action button is clicked...
 chrome.browserAction.onClicked.addListener(function (tab) {
+    myTab = tab;
     // ...check the URL of the active tab against our pattern and...
-    if (urlRegex.test(tab.url)) {
+    if (urlRegex.test(myTab.url)) {
         // ...if it matches, send a message specifying a callback too
-        chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, createTCX);
-        //httpGetAsync(tab.url, createTCX); //for when We create a webpage instead of the chrome extension to do this
+        chrome.tabs.sendMessage(myTab.id, {text: 'report_back'}, createTCX);
     }
 });
 
